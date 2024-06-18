@@ -1,6 +1,6 @@
 import _G
 from _G import wait
-import stage, utils, graphics, Input
+import stage, utils, graphics, Input, position
 import os
 from glob import glob
 import logging
@@ -33,10 +33,10 @@ def safe_click(x, y, dur=1, **kwargs):
     yield
 
 def get_character_name():
-  yield from safe_click(229, 597)
-  yield from safe_click(221, 888)
-  ret = utils.ocr_rect((1096, 182, 1375, 226), fname='chname.png')
-  yield from safe_click(52, 47)
+  yield from safe_click(*position.CharProfile)
+  yield from safe_click(*position.DefaultSkin)
+  ret = utils.ocr_rect(position.CharacterNameRect, fname='chname.png')
+  yield from safe_click(*position.GeneralBack)
   return ret
 
 def wait_until_transition():
@@ -64,15 +64,37 @@ def process_recording(video_name):
       yield from wait_until_transition()
     step += 1
 
+def start_scene(filename):
+  yield from safe_click(*position.SceneStart)
+  yield from process_recording(filename)
+  for _ in range(10):
+    wait(0.3)
+    yield
 
 def start_recording_fiber():
-  # Input.scroll_to(1820, 477, 1820, 301, slow=True)
+  idx = -1
+  vid = 0
+  depth = 0
   while True:
     yield
-    vid = 1
-    chname = yield from get_character_name()
-    _G.log_info("Character:", chname)
-    yield from safe_click(467, 651)
-    yield from safe_click(961, 635)
-    yield from process_recording(f"{chname}_{vid}")
-    break
+    if stage.is_stage('Gallery'):
+      idx += 1
+      if idx >= 7:
+        idx = 0
+        Input.scroll_to(*position.NextCharacterRowScroll, slow=True)
+        wait(0.3)
+        yield
+      mx, my = position.FirstCharacterAvartar
+      mx = mx + position.NextCharacterDeltaX * idx
+      yield from safe_click(mx, my)
+      chname = yield from get_character_name()
+      _G.log_info("Character:", chname)
+      vid = 1
+      yield from safe_click(*position.FirstScene)
+      yield from start_scene(f"{chname}_{vid}")
+    elif stage.is_stage('NextScene'):
+      vid += 1
+      yield from safe_click(*position.ToNextScene)
+      yield from start_scene(f"{chname}_{vid}")
+      
+      

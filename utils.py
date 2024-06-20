@@ -74,8 +74,8 @@ def move_window(x=None,y=None,w=None,h=None,boardless=False):
     _G.WinTitleBarSize = (0, 0)
     _G.WinDesktopBorderOffset = (0, 0)
     ws = win32gui.GetWindowLong(_G.AppHwnd, win32con.GWL_STYLE)
-    ws = ws & ~(win32con.WS_BORDER | win32con.WS_DLGFRAME | win32con.WS_SYSMENU)
-    ws = ws & ~(win32con.WS_CAPTION | win32con.WS_MAXIMIZE | win32con.WS_THICKFRAME)
+    ws = ws & ~(win32con.WS_CAPTION | win32con.WS_DLGFRAME | win32con.WS_SYSMENU)
+    ws = ws & ~(win32con.WS_MINIMIZEBOX | win32con.WS_MAXIMIZEBOX | win32con.WS_THICKFRAME)
     ws = ws & ~(win32con.WS_EX_DLGMODALFRAME  | win32con.WS_EX_CLIENTEDGE | win32con.WS_EX_STATICEDGE)
     win32gui.SetWindowLong(_G.AppHwnd, win32con.GWL_STYLE, ws)
     win32gui.SetWindowPos(

@@ -57,15 +57,13 @@ def mouse_down(x=None, y=None, app_offset=True, use_msg=_G.AppInputUseMsg, hwnd=
     win32api.SendMessage(hwnd, win32con.WM_LBUTTONDOWN, win32con.MK_LBUTTON, make_lparam(x,y))
     return
   rect = None
-  if app_offset:
-    rect = graphics.get_content_rect()
   if x is None:
     x = 0
-  elif app_offset:
-    x += rect[0]
   if y is None:
     y = 0
-  elif app_offset:
+  if app_offset:
+    rect = graphics.get_content_rect()
+    x += rect[0]
     y += rect[1]
   if x or y:
     win32api.SetCursorPos((x,y))
@@ -106,7 +104,7 @@ def set_cursor_pos(x, y, app_offset=True, use_msg=_G.AppInputUseMsg, hwnd=None, 
     y += rect[1]
   win32api.SetCursorPos((int(x),int(y)))
 
-def click(x=None, y=None, app_offset=True, use_msg=_G.AppInputUseMsg, hwnd=None):
+def click(x=None, y=None, app_offset=True, use_msg=_G.AppInputUseMsg, hwnd=None, dur=0.05):
   if not hwnd:
     hwnd = _G.AppInputHwnd
   x = int(x)
@@ -114,7 +112,7 @@ def click(x=None, y=None, app_offset=True, use_msg=_G.AppInputUseMsg, hwnd=None)
   if not use_msg and x and y:
     set_cursor_pos(x, y, app_offset)
   mouse_down(x, y, app_offset, use_msg, hwnd)
-  sleep(0.05)
+  sleep(dur)
   mouse_up(x, y, app_offset, use_msg, hwnd)
 
 def rclick(x, y, app_offset=True, use_msg=_G.AppInputUseMsg, hwnd=None, rrange=_G.PosRandomRange):

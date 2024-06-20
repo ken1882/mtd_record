@@ -6,6 +6,7 @@ import utils, Input, graphics, stage
 import win32con,win32gui
 from threading import Thread
 import argv_parse
+from datetime import datetime
 
 # Cache for pos/col records
 output_cache = []
@@ -97,7 +98,7 @@ def start_main():
       sleep(_G.FPS)
   finally:
     _G.FlagRunning = False
-    fiber.stop_recording()
+    fiber.stop_recording(f"tmp_{datetime.now().timestamp()}")
 
 if __name__ == "__main__":
   _G.SelfHwnd = utils.get_self_hwnd()

@@ -56,14 +56,14 @@ def get_character_name():
   yield from safe_click(*position.GeneralBack)
   return f"{ret2}_{ret}"
 
-def wait_until_transition():
-  depth = 0
+def wait_until_transition(st=0, ed=3):
+  depth = st
   while True:
     yield
     if stage.is_stage('StoryTransition'):
       depth += 1
       _G.log_info("Transition depth:", depth)
-      if depth > 3:
+      if depth > ed:
         break
     else:
       depth = 0
@@ -87,15 +87,13 @@ def process_recording(video_name):
       flag_pass = True
     if stage.is_stage('StoryTransition'):
       depth += 1
-      _G.log_info("Transition depth:", depth)
-      if depth > dep_threashold:
+      _G.log_info("Scene depth:", depth)
+      if depth >= dep_threashold:
         flag_pass = True
     else:
       depth = 0
     if not flag_pass:
       continue
-    depth = 0
-    flag_pass = False
     if stage.is_stage('NextScene'):
       _G.log_warning("Scene probably has undetected trasition!")
     _G.log_info("Scene step:", step)
@@ -109,7 +107,7 @@ def process_recording(video_name):
       for _ in range(10):
         wait(0.3)
         yield
-      dep_threashold = 8
+      dep_threashold = 15
     elif step == STEP_A:
       stop_recording(f"{video_name}_A.mp4")
       yield from wait_until_transition()
@@ -119,12 +117,14 @@ def process_recording(video_name):
         yield
     elif step >= STEP_B:
       stop_recording(f"{video_name}_{chord}.mp4")
-      yield from wait_until_transition()
+      yield from wait_until_transition(depth, dep_threashold)
       for _ in range(5):
         wait(0.3)
         yield
       while True:
+        yield
         if stage.is_stage('NextScene') or stage.is_stage('Gallery'):
+          _G.log_info("Scene ended")
           flag_end = True
           break
         elif stage.is_stage('Story'):
@@ -134,6 +134,8 @@ def process_recording(video_name):
             wait(0.3)
             yield
           break
+    flag_pass = False
+    depth = 0
     step += 1
   dep_threashold = 3
 

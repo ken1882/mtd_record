@@ -48,28 +48,54 @@ def safe_click(x, y, dur=1, **kwargs):
     yield
 
 def get_character_name():
+  yield from safe_click(*position.CharProfile2)
   yield from safe_click(*position.CharProfile)
   yield from safe_click(*position.DefaultSkin)
-  ret = utils.ocr_rect(position.CharacterNameRect, fname='chname.png')
+  ret  = utils.ocr_rect(position.CharacterNameRect, fname='chname.png')
+  ret2 = utils.ocr_rect(position.CharacterRaceRect, fname='chrace.png')
   yield from safe_click(*position.GeneralBack)
-  return ret
+  return f"{ret2}_{ret}"
 
 def wait_until_transition():
-  while stage.is_stage('StoryTransition'):
+  depth = 0
+  while True:
     yield
+    if stage.is_stage('StoryTransition'):
+      depth += 1
+      _G.log_info("Transition depth:", depth)
+      if depth > 3:
+        break
+    else:
+      depth = 0
   wait(0.5)
 
 def process_recording(video_name):
   STEP_INIT = 0
   STEP_A  = 1
   STEP_B  = 2
+  chord   = 'B'
   step = 0
   _G.log_info("Start recording")
   _G.flush()
-  while True:
+  flag_pass = False
+  depth = 0
+  flag_end = False
+  dep_threashold = 3
+  while not flag_end:
     yield
-    if not stage.is_stage('StoryTransition') and not stage.is_stage('NextScene'):
+    if stage.is_stage('NextScene'):
+      flag_pass = True
+    if stage.is_stage('StoryTransition'):
+      depth += 1
+      _G.log_info("Transition depth:", depth)
+      if depth > dep_threashold:
+        flag_pass = True
+    else:
+      depth = 0
+    if not flag_pass:
       continue
+    depth = 0
+    flag_pass = False
     if stage.is_stage('NextScene'):
       _G.log_warning("Scene probably has undetected trasition!")
     _G.log_info("Scene step:", step)
@@ -80,21 +106,36 @@ def process_recording(video_name):
         wait(0.3)
         yield
       Input.click(*position.AutoAdvance, dur=0.2)
-      for _ in range(60):
-        wait(0.98)
+      for _ in range(10):
+        wait(0.3)
         yield
+      dep_threashold = 8
     elif step == STEP_A:
       stop_recording(f"{video_name}_A.mp4")
       yield from wait_until_transition()
       start_recording()
-      for _ in range(180):
-        wait(0.98)
+      for _ in range(5):
+        wait(0.3)
         yield
-    elif step == STEP_B:
-      stop_recording(f"{video_name}_B.mp4")
+    elif step >= STEP_B:
+      stop_recording(f"{video_name}_{chord}.mp4")
       yield from wait_until_transition()
-      break
+      for _ in range(5):
+        wait(0.3)
+        yield
+      while True:
+        if stage.is_stage('NextScene') or stage.is_stage('Gallery'):
+          flag_end = True
+          break
+        elif stage.is_stage('Story'):
+          start_recording()
+          chord = chr(ord(chord)+1)
+          for _ in range(5):
+            wait(0.3)
+            yield
+          break
     step += 1
+  dep_threashold = 3
 
 def start_scene(filename):
   Input.rclick(*position.SceneStart)
@@ -121,8 +162,9 @@ def start_recording_fiber():
       if idx >= 5:
         _G.log_info("Next row")
         idx = 0
-        Input.scroll_to(*position.NextCharacterRowScroll, slow=True)
         wait(0.3)
+        Input.scroll_to(*position.NextCharacterRowScroll, slow=True)
+        wait(0.8)
         yield
       mx, my = position.FirstCharacterAvartar
       mx = mx + position.NextCharacterDeltaX * idx

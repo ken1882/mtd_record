@@ -154,12 +154,17 @@ def start_recording_fiber():
   ObsWs.connect()
   idx = _G.ARGV.index
   vid = 0
-  depth = 0
   _G.log_info("Starting index:", idx)
+  if not _G.ARGV.all:
+    while not stage.is_stage('SceneSelect'):
+      yield
+    yield from safe_click(*position.FirstScene)
+    yield from start_scene(datetime.now().strftime("%Y-%m-%d-%H-%M-%S_"))
+    return
   while True:
     yield
     if stage.is_stage('Gallery'):
-      if not _G.ARGV.all and idx:
+      if not _G.ARGV.all:
         break
       if idx >= 5:
         _G.log_info("Next row")

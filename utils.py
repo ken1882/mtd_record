@@ -8,8 +8,8 @@ from random import random
 import traceback
 import os.path
 from PIL import Image
-import graphics
 from difflib import SequenceMatcher
+import graphics
 
 try:
   import pytesseract

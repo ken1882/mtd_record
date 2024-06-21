@@ -1,0 +1,6 @@
+opencv-python
+numpy
+desktopmagic
+pywin32
+Pillow
+obs-websocket-py

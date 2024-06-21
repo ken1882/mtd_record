@@ -60,7 +60,7 @@ def wait_until_transition(st=0, ed=3):
   depth = st
   while True:
     yield
-    if stage.is_stage('StoryTransition'):
+    if stage.is_stage('StoryTransition') or stage.is_stage('Scene') or stage.is_stage('Gallery'):
       depth += 1
       _G.log_info("Transition depth:", depth)
       if depth > ed:
@@ -109,14 +109,14 @@ def process_recording(video_name):
         yield
       dep_threashold = 15
     elif step == STEP_A:
-      stop_recording(f"{video_name}_A.mp4")
+      stop_recording(f"{video_name}_A")
       yield from wait_until_transition()
       start_recording()
       for _ in range(5):
         wait(0.3)
         yield
     elif step >= STEP_B:
-      stop_recording(f"{video_name}_{chord}.mp4")
+      stop_recording(f"{video_name}_{chord}")
       yield from wait_until_transition(depth, dep_threashold)
       for _ in range(5):
         wait(0.3)

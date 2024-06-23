@@ -4,7 +4,7 @@ import stage, utils, graphics, Input, position
 import os
 from glob import glob
 import logging
-from datetime import datetime
+from datetime import datetime,timedelta
 from obswebsocket import obsws
 from obswebsocket import requests as obsreq
 
@@ -14,13 +14,17 @@ VIEDO_OUTPUT_DIR = 'G:/cache'
 VIDEO_DEST_DIR   = 'G:/cache/mtd'
 DEFAULT_OBS_FILENAME = '%CCYY-%MM-%DD %hh-%mm-%ss'
 VIDEO_FORMAT = 'mkv'
+MAX_RECORDING_TIME = timedelta(minutes=30)
+
 FlagRecordingStarted = False
 ObsWs = obsws('localhost', 4455)
+RecordStartTime = None
 
 def stop_recording(filename):
-  global FlagRecordingStarted
+  global FlagRecordingStarted,RecordStartTime
   if not FlagRecordingStarted:
     return
+  RecordStartTime = None
   FlagRecordingStarted = False
   res = ObsWs.call(obsreq.StopRecord())
   fpath = res.datain['outputPath']
@@ -33,8 +37,9 @@ def stop_recording(filename):
       pass
 
 def start_recording():
-  global FlagRecordingStarted
+  global FlagRecordingStarted,RecordStartTime
   FlagRecordingStarted = True
+  RecordStartTime = datetime.now()
   ObsWs.call(obsreq.StartRecord())
 
 def safe_click(x, y, dur=1, **kwargs):
@@ -60,6 +65,8 @@ def wait_until_transition(st=0, ed=3):
   depth = st
   while True:
     yield
+    if stage.is_stage('StoryAuto'):
+      break
     if stage.is_stage('StoryTransition') or stage.is_stage('Scene') or stage.is_stage('Gallery'):
       depth += 1
       _G.log_info("Transition depth:", depth)
@@ -67,7 +74,6 @@ def wait_until_transition(st=0, ed=3):
         break
     else:
       depth = 0
-  wait(0.5)
 
 def process_recording(video_name):
   STEP_INIT = 0
@@ -83,6 +89,12 @@ def process_recording(video_name):
   dep_threashold = 3
   while not flag_end:
     yield
+    if FlagRecordingStarted and RecordStartTime and datetime.now() > RecordStartTime+MAX_RECORDING_TIME:
+      _G.log_warning("Max recording time excessed, something probably went wrong, exiting")
+      stop_recording('__'+video_name)
+      _G.FlagRunning = False
+      return
+
     if stage.is_stage('NextScene'):
       flag_pass = True
     if stage.is_stage('StoryTransition'):
@@ -107,7 +119,7 @@ def process_recording(video_name):
       for _ in range(10):
         wait(0.3)
         yield
-      dep_threashold = 15
+      dep_threashold = 10
     elif step == STEP_A:
       stop_recording(f"{video_name}_A")
       yield from wait_until_transition()
@@ -118,8 +130,8 @@ def process_recording(video_name):
     elif step >= STEP_B:
       stop_recording(f"{video_name}_{chord}")
       yield from wait_until_transition(depth, dep_threashold)
-      for _ in range(5):
-        wait(0.3)
+      for _ in range(1):
+        wait(0.1)
         yield
       while True:
         yield
@@ -128,10 +140,11 @@ def process_recording(video_name):
           flag_end = True
           break
         elif stage.is_stage('Story'):
+          _G.log_info("Start step recording")
           start_recording()
           chord = chr(ord(chord)+1)
-          for _ in range(5):
-            wait(0.3)
+          for _ in range(10):
+            wait(0.1)
             yield
           break
     flag_pass = False
@@ -158,7 +171,6 @@ def start_recording_fiber():
   if not _G.ARGV.all:
     while not stage.is_stage('SceneSelect'):
       yield
-    yield from safe_click(*position.FirstScene)
     yield from start_scene(datetime.now().strftime("%Y-%m-%d-%H-%M-%S_"))
     return
   while True:

@@ -10,4 +10,4 @@ SceneStart      = (961, 635)
 ToNextScene     = (1087, 634)
 FirstCharacterAvartar = (920, 240)
 NextCharacterDeltaX   = 200
-NextCharacterRowScroll = (1820, 477, 1820, 301)
+NextCharacterRowScroll = (1820, 477, 1820, 303)

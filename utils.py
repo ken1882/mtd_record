@@ -7,6 +7,7 @@ from time import sleep
 from random import random
 import traceback
 import os.path
+import psutil
 from PIL import Image
 from difflib import SequenceMatcher
 import graphics
@@ -57,6 +58,7 @@ def find_app_window():
     hwnd = AppCandidates[sn]
   _G.AppHwnd = hwnd
   _G.AppTid,_G.AppPid = win32process.GetWindowThreadProcessId(hwnd)
+  _G.AppProcess = psutil.Process(_G.AppPid)
   print(f"App found with HWND {hwnd} ({_G.AppWindowName}), pid={_G.AppPid}")
   update_app_rect()
 
@@ -179,3 +181,15 @@ def is_focused():
     hwnd = win32gui.GetForegroundWindow()
     return hwnd == _G.SelfHwnd or hwnd == _G.AppHwnd
   return True
+
+def pause_process(proc=None):
+  if not proc:
+    proc = _G.AppProcess
+  _G.log_info("Pausing process", proc.name())
+  proc.suspend()
+
+def resume_process(proc=None):
+  if not proc:
+    proc = _G.AppProcess
+  _G.log_info("Resume process", proc.name())
+  proc.resume()

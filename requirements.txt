@@ -4,3 +4,4 @@ desktopmagic
 pywin32
 Pillow
 obs-websocket-py
+psutil

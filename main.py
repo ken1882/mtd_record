@@ -17,7 +17,7 @@ def print_cache():
   print(output_cache)
   for i,ss in enumerate(output_cache):
     if i & 1 == 0:
-      pos += ss 
+      pos += ss
     else:
       col += ss
   print('-'*42)
@@ -98,7 +98,7 @@ def start_main():
       sleep(_G.FPS)
   finally:
     _G.FlagRunning = False
-    fiber.stop_recording(f"tmp_{datetime.now().timestamp()}")
+    fiber.stop_recording('')
 
 if __name__ == "__main__":
   _G.SelfHwnd = utils.get_self_hwnd()

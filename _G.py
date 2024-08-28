@@ -18,6 +18,7 @@ AppRect = [0,0,0,0]
 AppPid  = 0
 AppTid  = 0 
 AppChildHwnd = 0
+AppProcess = None
 
 AppInputHwnd   = 0
 AppInputUseMsg = False
